@@ -37,6 +37,9 @@ $(function() {
                             videoTrack[0][IDX_LONGITUDE] ];
 
     videoTrackMarker = L.marker(initialLocation, { icon: ViewIcon }).addTo(map);
+    videoTrackMarker.setIconAngle(videoTrack[0][IDX_HEADING] + 90);
+
+    map.setView(initialLocation, 18)
   });
 
   setupVideoEvents(video);
