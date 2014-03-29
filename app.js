@@ -60,19 +60,47 @@ function makeGeoJSONLineString(samples) {
 
 function setupVideoEvents(video) {
   video.onprogress = function(e) {
-    var trackPoint = findNearestTrackPoint(video.currentTime);
+    var lastPoint = findPreviousTrackPoint(video.currentTime);
+    var nextPoint = findNextTrackPoint(video.currentTime);
 
-    var location = [trackPoint[IDX_LATITUDE], trackPoint[IDX_LONGITUDE]];
+    var lastTimeStamp = lastPoint[IDX_TIMESTAMP];
+    var nextTimeStamp = nextPoint[IDX_TIMESTAMP];
+
+    var range = nextTimeStamp - lastTimeStamp;
+
+    var percentage = ((video.currentTime * 1000.0) - lastTimeStamp) / range;
+
+    var lastLocation = [lastPoint[IDX_LATITUDE], lastPoint[IDX_LONGITUDE]];
+    var nextLocation = [nextPoint[IDX_LATITUDE], nextPoint[IDX_LONGITUDE]];
+
+    var lon = ((nextLocation[1] - lastLocation[1]) * percentage) + lastLocation[1];
+    var lat = ((nextLocation[0] - lastLocation[0]) * percentage) + lastLocation[0];
+
+    var location = [ lat, lon ];
+
+    var heading = ((nextPoint[IDX_HEADING] - lastPoint[IDX_HEADING]) * percentage) + lastPoint[IDX_HEADING];
 
     videoTrackMarker.setLatLng(location);
-    videoTrackMarker.setIconAngle(trackPoint[IDX_HEADING] + 90);
+    videoTrackMarker.setIconAngle(heading + 90);
   }
 }
 
-function findNearestTrackIndex(videoTime) {
-  return Math.floor(((videoTime * 1000.0) / videoTrackDuration) * videoTrack.length);
+function findPreviousTrackPointIndex(videoTime) {
+  for (var i = 0; i < videoTrack.length; ++i) {
+    var timeStamp = videoTrack[i][IDX_TIMESTAMP];
+    if (timeStamp > videoTime * 1000.0) {
+      return Math.max(0, i - 1);
+    }
+  }
+  return 0;
 }
 
-function findNearestTrackPoint(videoTime) {
-  return videoTrack[findNearestTrackIndex(videoTime)];
+function findPreviousTrackPoint(videoTime) {
+  var index = findPreviousTrackPointIndex(videoTime);
+  return videoTrack[index];
+}
+
+function findNextTrackPoint(videoTime) {
+  var index = findPreviousTrackPointIndex(videoTime) + 1;
+  return index < videoTrack.length ? videoTrack[index] : videoTrack[videoTrack.length - 1];
 }
