@@ -1,14 +1,21 @@
 var IDX_TIMESTAMP = 0;
 var IDX_LATITUDE  = 1;
 var IDX_LONGITUDE = 2;
+var IDX_COURSE    = 6;
 var IDX_HEADING   = 8;
 
 var ViewIcon = L.icon({
     iconUrl: 'marker-icon-2x.png',
     iconRetinaUrl: 'marker-icon-2x.png',
     iconSize: [82, 82],
-    iconAnchor: [42, 76],
-    popupAnchor: [-3, -76],
+    iconAnchor: [41, 79]
+});
+
+var ArrowIcon = L.icon({
+    iconUrl: 'marker-arrow-2x.png',
+    iconRetinaUrl: 'marker-arrow-2x.png',
+    iconSize: [32, 32],
+    iconAnchor: [16, 20]
 });
 
 var map,
@@ -17,7 +24,8 @@ var map,
     videoTrackFirstTimeStamp,
     videoTrackLastTimeStamp,
     videoTrackDuration,
-    videoTrackMarker;
+    videoTrackMarker,
+    videoTrackCourseMarker;
 
 $(function() {
   video = $('#video').get(0);
@@ -35,6 +43,9 @@ $(function() {
 
     var initialLocation = [ videoTrack[0][IDX_LATITUDE],
                             videoTrack[0][IDX_LONGITUDE] ];
+
+    videoTrackCourseMarker = L.marker(initialLocation, { icon: ArrowIcon }).addTo(map);
+    videoTrackCourseMarker.setIconAngle(videoTrack[0][IDX_COURSE]);
 
     videoTrackMarker = L.marker(initialLocation, { icon: ViewIcon }).addTo(map);
     videoTrackMarker.setIconAngle(videoTrack[0][IDX_HEADING] + 90);
@@ -79,9 +90,13 @@ function setupVideoEvents(video) {
     var location = [ lat, lon ];
 
     var heading = ((nextPoint[IDX_HEADING] - lastPoint[IDX_HEADING]) * percentage) + lastPoint[IDX_HEADING];
+    var course = ((nextPoint[IDX_COURSE] - lastPoint[IDX_COURSE]) * percentage) + lastPoint[IDX_COURSE];
 
     videoTrackMarker.setLatLng(location);
     videoTrackMarker.setIconAngle(heading + 90);
+
+    videoTrackCourseMarker.setLatLng(location);
+    videoTrackCourseMarker.setIconAngle(course);
   }
 }
 
