@@ -70,7 +70,7 @@ function makeGeoJSONLineString(samples) {
 }
 
 function setupVideoEvents(video) {
-  video.onprogress = function(e) {
+  video.addEventListener('timeupdate', function(e) {
     var lastPoint = findPreviousTrackPoint(video.currentTime);
     var nextPoint = findNextTrackPoint(video.currentTime);
 
@@ -97,7 +97,7 @@ function setupVideoEvents(video) {
 
     videoTrackCourseMarker.setLatLng(location);
     videoTrackCourseMarker.setIconAngle(course);
-  }
+  });
 }
 
 function findPreviousTrackPointIndex(videoTime) {
