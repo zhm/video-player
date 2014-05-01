@@ -25,7 +25,8 @@ var map,
     videoTrackLastTimeStamp,
     videoTrackDuration,
     videoTrackMarker,
-    videoTrackCourseMarker;
+    videoTrackCourseMarker,
+    videoTimer;
 
 $(function() {
   video = $('#video').get(0);
@@ -70,34 +71,57 @@ function makeGeoJSONLineString(samples) {
 }
 
 function setupVideoEvents(video) {
-  video.addEventListener('timeupdate', function(e) {
-    var lastPoint = findPreviousTrackPoint(video.currentTime);
-    var nextPoint = findNextTrackPoint(video.currentTime);
+  var updateMarkers = function() {
+    updateVideoMarkers(video);
+  };
 
-    var lastTimeStamp = lastPoint[IDX_TIMESTAMP];
-    var nextTimeStamp = nextPoint[IDX_TIMESTAMP];
+  var stopUpdatingMarkers = function() {
+    if (videoTimer) {
+      clearInterval(videoTimer);
+      videoTimer = null;
+    }
+  };
 
-    var range = nextTimeStamp - lastTimeStamp;
+  var startUpdatingMarkers = function() {
+    stopUpdatingMarkers();
 
-    var percentage = ((video.currentTime * 1000.0) - lastTimeStamp) / range;
+    videoTimer = setInterval(updateMarkers, 33.333333333333);
+  };
 
-    var lastLocation = [lastPoint[IDX_LATITUDE], lastPoint[IDX_LONGITUDE]];
-    var nextLocation = [nextPoint[IDX_LATITUDE], nextPoint[IDX_LONGITUDE]];
+  video.addEventListener('play', startUpdatingMarkers);
+  video.addEventListener('pause', stopUpdatingMarkers);
+  video.addEventListener('timeupdate', updateMarkers);
+  video.addEventListener('seeked', updateMarkers);
+  video.addEventListener('seeking', updateMarkers);
+}
 
-    var lon = ((nextLocation[1] - lastLocation[1]) * percentage) + lastLocation[1];
-    var lat = ((nextLocation[0] - lastLocation[0]) * percentage) + lastLocation[0];
+function updateVideoMarkers(video) {
+  var lastPoint = findPreviousTrackPoint(video.currentTime);
+  var nextPoint = findNextTrackPoint(video.currentTime);
 
-    var location = [ lat, lon ];
+  var lastTimeStamp = lastPoint[IDX_TIMESTAMP];
+  var nextTimeStamp = nextPoint[IDX_TIMESTAMP];
 
-    var heading = ((nextPoint[IDX_HEADING] - lastPoint[IDX_HEADING]) * percentage) + lastPoint[IDX_HEADING];
-    var course = ((nextPoint[IDX_COURSE] - lastPoint[IDX_COURSE]) * percentage) + lastPoint[IDX_COURSE];
+  var range = nextTimeStamp - lastTimeStamp;
 
-    videoTrackMarker.setLatLng(location);
-    videoTrackMarker.setIconAngle(heading + 90);
+  var percentage = ((video.currentTime * 1000.0) - lastTimeStamp) / range;
 
-    videoTrackCourseMarker.setLatLng(location);
-    videoTrackCourseMarker.setIconAngle(course);
-  });
+  var lastLocation = [lastPoint[IDX_LATITUDE], lastPoint[IDX_LONGITUDE]];
+  var nextLocation = [nextPoint[IDX_LATITUDE], nextPoint[IDX_LONGITUDE]];
+
+  var lon = ((nextLocation[1] - lastLocation[1]) * percentage) + lastLocation[1];
+  var lat = ((nextLocation[0] - lastLocation[0]) * percentage) + lastLocation[0];
+
+  var location = [ lat, lon ];
+
+  var heading = ((nextPoint[IDX_HEADING] - lastPoint[IDX_HEADING]) * percentage) + lastPoint[IDX_HEADING];
+  var course = ((nextPoint[IDX_COURSE] - lastPoint[IDX_COURSE]) * percentage) + lastPoint[IDX_COURSE];
+
+  videoTrackMarker.setLatLng(location);
+  videoTrackMarker.setIconAngle(heading + 90);
+
+  videoTrackCourseMarker.setLatLng(location);
+  videoTrackCourseMarker.setIconAngle(course);
 }
 
 function findPreviousTrackPointIndex(videoTime) {
